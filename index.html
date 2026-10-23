@@ -10,12 +10,12 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Sora:wght@300;400;500;600&family=Unbounded:wght@500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="site.css" />
-  <link rel="icon" href="https://avatars.githubusercontent.com/u/33364110?v=4" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
 </head>
 <body>
   <div class="noise" aria-hidden="true"></div>
   <div class="grid-bg" aria-hidden="true"></div>
-  <div class="cursor-glow" aria-hidden="true"></div>
 
   <header class="top">
     <a class="logo" href="#top">Jason54<span class="logo__dot"></span></a>
@@ -494,52 +494,48 @@
 
       const orb = document.querySelector(".hero__orb");
       const design = document.querySelector(".hero__design");
-      const glow = document.querySelector(".cursor-glow");
+      const hero = document.querySelector(".hero");
       let mx = 0, my = 0, tx = 0, ty = 0;
+      let ticking = false;
+      let scrollQueued = false;
+
+      const applyPointer = () => {
+        ticking = false;
+        tx += (mx - tx) * 0.12;
+        ty += (my - ty) * 0.12;
+        if (orb) orb.style.transform = `translate3d(${tx * 20}px, ${ty * 14}px, 0)`;
+        if (design) design.style.transform = `translate3d(${tx * -10}px, ${ty * -7}px, 0)`;
+        if (Math.abs(mx - tx) > 0.002 || Math.abs(my - ty) > 0.002) {
+          ticking = true;
+          requestAnimationFrame(applyPointer);
+        }
+      };
 
       window.addEventListener(
         "pointermove",
         (ev) => {
           mx = (ev.clientX / window.innerWidth - 0.5) * 2;
           my = (ev.clientY / window.innerHeight - 0.5) * 2;
-          if (glow) {
-            glow.style.left = `${ev.clientX}px`;
-            glow.style.top = `${ev.clientY}px`;
-            glow.classList.add("is-on");
+          if (!ticking) {
+            ticking = true;
+            requestAnimationFrame(applyPointer);
           }
         },
         { passive: true }
       );
 
-      const tick = () => {
-        tx += (mx - tx) * 0.08;
-        ty += (my - ty) * 0.08;
-        if (orb) orb.style.transform = `translate(${tx * 28}px, ${ty * 20}px) scale(${1 + Math.abs(tx) * 0.04})`;
-        if (design) design.style.transform = `translate3d(${tx * -18}px, ${ty * -12}px, 0) scale(1.04)`;
-        requestAnimationFrame(tick);
-      };
-      tick();
-
-      document.querySelectorAll(".btn").forEach((btn) => {
-        btn.addEventListener("pointermove", (ev) => {
-          const r = btn.getBoundingClientRect();
-          const x = ev.clientX - r.left - r.width / 2;
-          const y = ev.clientY - r.top - r.height / 2;
-          btn.style.transform = `translate(${x * 0.18}px, ${y * 0.22}px)`;
-        });
-        btn.addEventListener("pointerleave", () => {
-          btn.style.transform = "";
-        });
-      });
-
-      const hero = document.querySelector(".hero");
       if (hero) {
         window.addEventListener(
           "scroll",
           () => {
-            const y = Math.min(window.scrollY, window.innerHeight);
-            hero.style.setProperty("--parallax", `${y * 0.35}px`);
-            hero.style.setProperty("--fade", String(1 - y / (window.innerHeight * 0.85)));
+            if (scrollQueued) return;
+            scrollQueued = true;
+            requestAnimationFrame(() => {
+              scrollQueued = false;
+              const y = Math.min(window.scrollY, window.innerHeight);
+              hero.style.setProperty("--parallax", `${(y * 0.2).toFixed(1)}px`);
+              hero.style.setProperty("--fade", String(Math.max(0, 1 - y / (window.innerHeight * 0.9))));
+            });
           },
           { passive: true }
         );
