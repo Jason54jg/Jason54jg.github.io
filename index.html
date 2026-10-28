@@ -31,10 +31,16 @@
   <main id="top">
     <section class="hero" aria-label="Présentation">
       <div class="hero__plane" aria-hidden="true">
+        <div class="hero__aurora" aria-hidden="true">
+          <span class="hero__blob hero__blob--a"></span>
+          <span class="hero__blob hero__blob--b"></span>
+          <span class="hero__blob hero__blob--c"></span>
+        </div>
         <div class="hero__design">
           <div class="hero__mesh"></div>
           <div class="hero__beam hero__beam--a"></div>
           <div class="hero__beam hero__beam--b"></div>
+          <div class="hero__beam hero__beam--c"></div>
           <div class="hero__shards">
             <span style="--s:0"></span>
             <span style="--s:1"></span>
@@ -493,18 +499,19 @@
       document.querySelectorAll(".section, .project-block, .contact-list li, .section__bar").forEach((el) => io.observe(el));
 
       const orb = document.querySelector(".hero__orb");
-      const design = document.querySelector(".hero__design");
       const hero = document.querySelector(".hero");
       let mx = 0, my = 0, tx = 0, ty = 0;
       let ticking = false;
       let scrollQueued = false;
+      let heroActive = true;
 
+      // un seul calque suit la souris (pas tout le hero)
       const applyPointer = () => {
         ticking = false;
-        tx += (mx - tx) * 0.12;
-        ty += (my - ty) * 0.12;
-        if (orb) orb.style.transform = `translate3d(${tx * 20}px, ${ty * 14}px, 0)`;
-        if (design) design.style.transform = `translate3d(${tx * -10}px, ${ty * -7}px, 0)`;
+        if (!heroActive || !orb) return;
+        tx += (mx - tx) * 0.08;
+        ty += (my - ty) * 0.08;
+        orb.style.transform = `translate3d(${(tx * 16).toFixed(1)}px, ${(ty * 10).toFixed(1)}px, 0)`;
         if (Math.abs(mx - tx) > 0.002 || Math.abs(my - ty) > 0.002) {
           ticking = true;
           requestAnimationFrame(applyPointer);
@@ -514,6 +521,7 @@
       window.addEventListener(
         "pointermove",
         (ev) => {
+          if (!heroActive) return;
           mx = (ev.clientX / window.innerWidth - 0.5) * 2;
           my = (ev.clientY / window.innerHeight - 0.5) * 2;
           if (!ticking) {
@@ -532,9 +540,14 @@
             scrollQueued = true;
             requestAnimationFrame(() => {
               scrollQueued = false;
-              const y = Math.min(window.scrollY, window.innerHeight);
-              hero.style.setProperty("--parallax", `${(y * 0.2).toFixed(1)}px`);
-              hero.style.setProperty("--fade", String(Math.max(0, 1 - y / (window.innerHeight * 0.9))));
+              const y = window.scrollY;
+              const h = window.innerHeight;
+              heroActive = y < h * 0.95;
+              hero.classList.toggle("is-past", !heroActive);
+              if (!heroActive) return;
+              const yy = Math.min(y, h);
+              hero.style.setProperty("--parallax", `${(yy * 0.15).toFixed(1)}px`);
+              hero.style.setProperty("--fade", String(Math.max(0, 1 - yy / (h * 0.9))));
             });
           },
           { passive: true }
